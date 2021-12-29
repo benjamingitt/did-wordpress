@@ -36,6 +36,7 @@ import WelcomeDidPage from "./sdk/WelcomeDidPage";
 import LoginDidPage from "./sdk/LoginDidPage";
 import LoginPage from "./sdk/LoginPage";
 import AppPage from "./sdk/AppPage";
+import WelcomeDidPageEver from "./sdk/WelcomeDidPageEver";
 
 import Header from "./sdk/Header";
 
@@ -170,6 +171,7 @@ function App() {
 						<Route exact path="/login-did" component={LoginDidPage}></Route>
 						<Route exact path="/login" component={LoginPage}></Route>
 						<Route exact path="/app" component={AppPage}></Route>
+						<Route exact path="/welcome-did-ever" component={WelcomeDidPageEver}></Route>
 					</Switch>
 				</div>
 			</Context.Provider>

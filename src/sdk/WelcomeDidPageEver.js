@@ -6,6 +6,7 @@ import {Account} from "@tonclient/appkit";
 import {libWeb} from "@tonclient/lib-web";
 import {signerKeys, TonClient, signerNone} from "@tonclient/core";
 
+
 // import {DidStorageContract} from "./contracts/DidStorageContract.js";
 import {DEXClientContract} from "../extensions/contracts/testNet/DEXClientMainNet.js";
 // import {DidDocumentContract} from "./contracts/DidDocumentContract.js";
@@ -14,6 +15,7 @@ import {DidStorageContract} from "./contracts/new/DidStorageContract.js";
 import {DidDocumentContract} from "./contracts/new/DidDocumentContract.js";
 
 import {useQuery} from "react-query";
+
 
 //const {TonClient} = require("@tonclient/core");
 TonClient.useBinaryLibrary(libWeb);
@@ -53,7 +55,9 @@ let walletAddr =
 // 		}),
 // 	}).then((response) => response.json());
 
-function WelcomeDidPage() {
+const ton = new ProviderRpcClient();
+
+function WelcomeDidPageEver() {
 	const [didDoc, setDidDoc] = useState();
 
 	const seed = sessionStorage.seed;
@@ -98,85 +102,150 @@ function WelcomeDidPage() {
 	// });
 
 	async function createDID3() {
-		const acc = new Account(DEXClientContract, {
-			address: localStorage.address,
-			signer: signerKeys(await getClientKeys(sessionStorage.seed)),
-			client,
-		});
+        await ton.ensureInitialized();
 
-		let pubkey = (await getClientKeys(seed)).public;
+        const {accountInteraction} = await ton.rawApi.requestPermissions({
+            permissions: ['tonClient', 'accountInteraction']
+        });
+
+        console.log(accountInteraction);
 
 		try {
 			const newDIDDoc = {
-				id: "did:freeton:" +pubkey.toString(),
+				id: "did:freeton:" +accountInteraction.publicKey.toString(),
 				createdAt: new Date().getTime().toString(),
 				"@context": [
 					"https://www.w3.org/ns/did/v1",
 					"https://w3id.org/security/suites/ed25519-2020/v1",
 				],
-				publicKey: pubkey.toString(),
+				publicKey: accountInteraction.publicKey.toString(),
 				verificationMethod: {
 					id: null,
 					type: "Ed25519VerificationKey2020",
 					controller: null,
-					publicKeyMultibase: pubkey,
+					publicKeyMultibase: accountInteraction.publicKey,
 				},
 			};
 
-			const {body} = await client.abi.encode_message_body({
-				abi: {type: "Contract", value: DidStorageContract.abi},
-				signer: {type: "None"},
-				is_internal: true,
-				call_set: {
-					function_name: "addDid",
-					input: {
-						pubKey: "0x" + pubkey,
-						didDocument: JSON.stringify(newDIDDoc),
-						addr: localStorage.address,
-					},
-				},
-			});
+			
 
-			const res = await acc.run("sendTransaction", {
-				dest: dexrootAddr,
-				value: 500000000,
-				bounce: true,
-				flags: 3,
-				payload: body,
-			});
+            // const response = await ton.rawApi.sendMessage({
+            //     sender: accountInteraction.address,
+            //     recipient: dexrootAddr,
+            //     amount: '500000000',
+            //     bounce: true,
+            //     payload: {
+            //         abi: JSON.stringify(DidStorageContract.abi),
+            //         method: 'addDid',
+            //         params: {
+            //             pubKey: "0x"+accountInteraction.publicKey,
+            //             didDocument: JSON.stringify(newDIDDoc),
+            //             addr: accountInteraction.address
+            //         }
+            //     }
+            // });
+            // console.log('response');
+            // console.log(response);
 
-			console.log(res);
+			
 		} catch (e) {
 			console.log(e);
 		}
 
-		setTimeout(async function(){
-			const acc2 = new Account(DidStorageContract, {
-				address: dexrootAddr,
-				signer: signerNone(),
-				client,
-			});
-			const res2 = await acc2.runLocal("resolveDidDocument", {
-				id: "0x" + pubkey,
-			});
-	
-			console.log(res2);
-	
-			let addrDidDoc = res2.decoded.out_messages[0].value.addrDidDocument;
-	
-			const didAcc = new Account(DidDocumentContract, {
-				address: addrDidDoc,
-				signer: signerNone(),
-				client,
-			});
-	
-			const resDid = await didAcc.runLocal("getDid", {});
-	
-			setDidDoc(resDid.decoded.out_messages[0].value.value0);
-			console.log(resDid.decoded.out_messages[0].value.value0);
-		},5000);
+        setTimeout(async function() {
+            const {output} = await ton.rawApi.runLocal({
+                address: dexrootAddr,
+                functionCall: {
+                    abi: JSON.stringify(DidStorageContract.abi),
+                    method: 'resolveDidDocument',
+                    params: {
+                        id: "0x" + accountInteraction.publicKey
+                    }
+                }
+            });
+            console.log('output');
+            const addrDidDoc = output.addrDidDocument;
+            console.log(output, addrDidDoc);
 
-		
+            const {output2} = await ton.rawApi.runLocal({
+                address: addrDidDoc,
+                functionCall: {
+                    abi: JSON.stringify(DidDocumentContract.abi),
+                    method: 'getInfo',
+                    params: {}
+                }
+            });
+
+            console.log(output2);
+    
+    
+            // const acc2 = new Account(DidStorageContract, {
+            //     address: dexrootAddr,
+            //     signer: signerNone(),
+            //     client,
+            // });
+            // const res2 = await acc2.runLocal("resolveDidDocument", {
+            //     id: "0x" + pubkey,
+            // });
+    
+            // console.log(res2);
+    
+            // let addrDidDoc = res2.decoded.out_messages[0].value.addrDidDocument;
+    
+            // const didAcc = new Account(DidDocumentContract, {
+            //     address: addrDidDoc,
+            //     signer: signerNone(),
+            //     client,
+            // });
+    
+            // const resDid = await didAcc.runLocal("getDid", {});
+    
+            // //setDidDoc(resDid.decoded.out_messages[0].value.value0);
+            // console.log(resDid.decoded.out_messages[0].value.value0);
+        }, 5000);
+        
+
+		// try {
+
+		// 	const newDIDDoc2 = {
+		// 		id: pubkey.toString()
+		// 	};
+
+		// 	const {body} = await client.abi.encode_message_body({
+		// 		abi: {type: "Contract", value: DidDocumentContract.abi},
+		// 		signer: {type: "None"},
+		// 		is_internal: true,
+		// 		call_set: {
+		// 			function_name: "newDidStatus",
+		// 			input: {
+		// 				status: false,
+		// 			},
+		// 		},
+		// 	});
+
+		// 	const res = await acc.run("sendTransaction", {
+		// 		dest: dexrootAddr,
+		// 		value: 500000000,
+		// 		bounce: true,
+		// 		flags: 3,
+		// 		payload: body,
+		// 	});
+
+		// 	console.log(res);
+
+		// 	const resDid2 = await didAcc.runLocal("getDid", {});
+
+		// 	console.log(resDid2);
+
+		// } catch (e) {
+		// 	console.log(e);
+		// }
+
+		// const resDid2 = await didAcc.runLocal("getDid", {});
+
+		// 	console.log(resDid2);
+
+		// console.log(pubkey);
 	}
 
 	async function resolveDID() {
@@ -477,4 +546,4 @@ function WelcomeDidPage() {
 	);
 }
 
-export default WelcomeDidPage;
+export default WelcomeDidPageEver;

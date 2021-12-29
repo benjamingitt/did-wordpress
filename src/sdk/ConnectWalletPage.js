@@ -1,4 +1,5 @@
 import React, {useState} from "react";
+import { Redirect } from 'react-router-dom';
 import backspace from "./img/backspace.png";
 //import crypto from 'crypto'
 //import {genSeed, genKeys} from "../sdk";
@@ -92,6 +93,8 @@ function ConnectWalletPage() {
 	const [loader, setLoader] = useState(false);
 
 	const aes = new pidCrypt.AES.CBC();
+
+	const [connectEver, setConnectEver] = useState(false);
 
 	async function genSeed(pin) {
 		let randMnemonic = await client.crypto.mnemonic_from_random({
@@ -692,6 +695,7 @@ function ConnectWalletPage() {
 
 		const selectedAddress = accountInteraction.address;
 		console.log(selectedAddress);
+		setConnectEver(true);
 	}
 
 	return (
@@ -1086,6 +1090,7 @@ function ConnectWalletPage() {
 						</button>
 					</a>
 				</div>
+				{connectEver?<Redirect to="/welcome-did-ever"/>:null}
 			</div>
 		</div>
 	);

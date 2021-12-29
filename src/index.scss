@@ -31,9 +31,9 @@ button:hover {
 	width: 100%;
 }
 #root {
-	height: 100%;
 	width: 100%;
 	background: linear-gradient(to top, #3569f0, #6f27e4);
+	padding-bottom: 50px;
 }
 .hide {
 	display: none;
@@ -419,8 +419,9 @@ a:hover {
 .modal-did-document {
 	position: relative;
 	top: 0;
-	left: 0;
-	transform: none;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 80%;
 	max-width: none;
 }
 
@@ -453,11 +454,16 @@ a:hover {
 	border-bottom: 1px solid #000;
 	font-weight: 600;
 }
-.modal-did-document>.content-document>.new-did>.curent-attr {
+.modal-did-document>.content-document>.menu-item>div {
 	padding-bottom: 5px;
 	margin-bottom: 5px;
 	border-bottom: 1px solid #000;
 }
+// .modal-did-document>.content-document>.new-did>.curent-attr {
+// 	padding-bottom: 5px;
+// 	margin-bottom: 5px;
+// 	border-bottom: 1px solid #000;
+// }
 .modal-did-document>.content-document>.new-did>.curent-attr>div {
 	margin-bottom: 3px;
 }
@@ -471,11 +477,11 @@ a:hover {
 	border: 1px solid #000;
 	border-radius: 4px;
 }
-.modal-did-document>.content-document>.new-did>.new-attr {
-	padding-bottom: 5px;
-	margin-bottom: 5px;
-	border-bottom: 1px solid #000;
-}
+// .modal-did-document>.content-document>.new-did>.new-attr {
+// 	padding-bottom: 5px;
+// 	margin-bottom: 5px;
+// 	border-bottom: 1px solid #000;
+// }
 .modal-did-document>.content-document>.new-did>.new-attr>select {
 	margin-right: 5px;
 }
