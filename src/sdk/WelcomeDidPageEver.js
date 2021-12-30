@@ -11,8 +11,8 @@ import {signerKeys, TonClient, signerNone} from "@tonclient/core";
 import {DEXClientContract} from "../extensions/contracts/testNet/DEXClientMainNet.js";
 // import {DidDocumentContract} from "./contracts/DidDocumentContract.js";
 
-import {DidStorageContract} from "./contracts/new/DidStorageContract.js";
-import {DidDocumentContract} from "./contracts/new/DidDocumentContract.js";
+import {DidStorageContract} from "./contracts/new/DidStorageContractNew.js";
+import {DidDocumentContract} from "./contracts/new/DidDocumentContractNew.js";
 
 import {useQuery} from "react-query";
 
@@ -27,8 +27,12 @@ require("pidcrypt/aes_cbc");
 // let dexrootAddr =
 // 	"0:49709b1fa8adc2768c4c90f1c6fef0bdb01dc959a8052b3ed072de9dfd080424";
 
-let dexrootAddr =
-	"0:c9e74798ee45b2e57661162dedeb81e8d015402f56c597747120e0de295f7441";
+// let dexrootAddr =
+// 	"0:c9e74798ee45b2e57661162dedeb81e8d015402f56c597747120e0de295f7441";
+
+// let dexrootAddr = "0:bf598f890ca98e1d86957f28911fea31d5ce8f4551913ecc64da453a4144bef0";
+
+let dexrootAddr = "0:ee63d43c1f5ea924d3d47c5a264ad2661b5a4193963915d89f3116315350d7d3";
 
 let walletAddr =
 	"0:da136604399797f5d012ed406d541f4046d2aa5eca55290d500d2bcdfd9e2148";
@@ -102,6 +106,18 @@ function WelcomeDidPageEver() {
 	// });
 
 	async function createDID3() {
+
+		console.log('initInpageProvider...');
+        
+        const provider = await import('ton-inpage-provider');
+        if (!(await provider.hasTonProvider())) {
+            throw new Error('Extension is not installed');
+        }
+       
+
+        
+
+
         await ton.ensureInitialized();
 
         const {accountInteraction} = await ton.rawApi.requestPermissions({
@@ -109,6 +125,11 @@ function WelcomeDidPageEver() {
         });
 
         console.log(accountInteraction);
+
+
+        if (accountInteraction == null) {
+            throw new Error('Insufficient permissions');
+        }
 
 		try {
 			const newDIDDoc = {
@@ -165,9 +186,10 @@ function WelcomeDidPageEver() {
             });
             console.log('output');
             const addrDidDoc = output.addrDidDocument;
+			//const addrDidDoc = "0:2689429e8d2b696a00612ace0b2e5d53b004b0c480f60948d1dfa241f02b3235";
             console.log(output, addrDidDoc);
 
-            const {output2} = await ton.rawApi.runLocal({
+            const {second} = await ton.rawApi.runLocal({
                 address: addrDidDoc,
                 functionCall: {
                     abi: JSON.stringify(DidDocumentContract.abi),
@@ -176,7 +198,7 @@ function WelcomeDidPageEver() {
                 }
             });
 
-            console.log(output2);
+            console.log(second);
     
     
             // const acc2 = new Account(DidStorageContract, {
@@ -202,7 +224,7 @@ function WelcomeDidPageEver() {
     
             // //setDidDoc(resDid.decoded.out_messages[0].value.value0);
             // console.log(resDid.decoded.out_messages[0].value.value0);
-        }, 5000);
+        }, 1000);
         
 
 		// try {

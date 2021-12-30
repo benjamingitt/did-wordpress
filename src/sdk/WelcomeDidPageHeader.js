@@ -63,12 +63,12 @@ function WelcomeDidPageHeader() {
 
 	return (
 		<div className="acc-info">
-			<div className="balance">
+			{/* <div className="balance">
 				<div className="bal">{bal} TON</div>
 				<button className="refresh-bal" onClick={refreshBal}>
 					<img src={refresh}></img>
 				</button>
-			</div>
+			</div> */}
 			<div className="acc">
 				<div className="acc-logo"></div>
 

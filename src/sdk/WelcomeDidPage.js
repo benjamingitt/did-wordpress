@@ -10,8 +10,8 @@ import {signerKeys, TonClient, signerNone} from "@tonclient/core";
 import {DEXClientContract} from "../extensions/contracts/testNet/DEXClientMainNet.js";
 // import {DidDocumentContract} from "./contracts/DidDocumentContract.js";
 
-import {DidStorageContract} from "./contracts/new/DidStorageContract.js";
-import {DidDocumentContract} from "./contracts/new/DidDocumentContract.js";
+import {DidStorageContract} from "./contracts/new/DidStorageContractNew.js";
+import {DidDocumentContract} from "./contracts/new/DidDocumentContractNew.js";
 
 import {useQuery} from "react-query";
 
@@ -25,8 +25,10 @@ require("pidcrypt/aes_cbc");
 // let dexrootAddr =
 // 	"0:49709b1fa8adc2768c4c90f1c6fef0bdb01dc959a8052b3ed072de9dfd080424";
 
-let dexrootAddr =
-	"0:c9e74798ee45b2e57661162dedeb81e8d015402f56c597747120e0de295f7441";
+// let dexrootAddr =
+// 	"0:c9e74798ee45b2e57661162dedeb81e8d015402f56c597747120e0de295f7441";
+
+let dexrootAddr = "0:ee63d43c1f5ea924d3d47c5a264ad2661b5a4193963915d89f3116315350d7d3";
 
 let walletAddr =
 	"0:da136604399797f5d012ed406d541f4046d2aa5eca55290d500d2bcdfd9e2148";
@@ -70,6 +72,12 @@ function WelcomeDidPage() {
 
 	const [curentAttr, setCurentAttr] = useState();
 
+	const [curentStatus, setCurentStatus] = useState();
+
+	const [curentPub , setCurentPub] = useState();
+
+	const [curentAddr, setCurentAddr] = useState();
+
 	async function getClientKeys(phrase) {
 		//todo change with only pubkey returns
 		let test = await client.crypto.mnemonic_derive_sign_keys({
@@ -97,7 +105,48 @@ function WelcomeDidPage() {
 	// 	});
 	// });
 
+	async function getClientBalance(clientAddress) {
+		console.log("clientAddress", clientAddress);
+		let address = clientAddress;
+		if (
+			clientAddress ===
+			"0:0000000000000000000000000000000000000000000000000000000000000000"
+		)
+			return 0;
+		try {
+			let clientBalance = await client.net.query_collection({
+				collection: "accounts",
+				filter: {
+					id: {
+						eq: address,
+					},
+				},
+				result: "balance",
+			});
+			console.log("clientBalance", clientBalance);
+			return +clientBalance.result[0].balance / 1000000000;
+		} catch (e) {
+			console.log("catch E", e);
+			return e;
+		}
+	}
+
 	async function createDID3() {
+
+
+		let bal = getClientBalance(localStorage.address);
+
+		bal.then(
+			(data) => {
+				if(data < 1){
+					alert("Insufficient balance");
+					return;
+				}
+			}
+		);
+
+		setLoader(true);
+
 		const acc = new Account(DEXClientContract, {
 			address: localStorage.address,
 			signer: signerKeys(await getClientKeys(sessionStorage.seed)),
@@ -109,16 +158,16 @@ function WelcomeDidPage() {
 		try {
 			const newDIDDoc = {
 				id: "did:freeton:" +pubkey.toString(),
-				createdAt: new Date().getTime().toString(),
+				//createdAt: new Date().getTime().toString(),
 				"@context": [
 					"https://www.w3.org/ns/did/v1",
 					"https://w3id.org/security/suites/ed25519-2020/v1",
 				],
 				publicKey: pubkey.toString(),
 				verificationMethod: {
-					id: null,
+					id: "did:freeton:" +pubkey.toString(),
 					type: "Ed25519VerificationKey2020",
-					controller: null,
+					controller: "did:freeton:" +pubkey.toString(),
 					publicKeyMultibase: pubkey,
 				},
 			};
@@ -150,6 +199,36 @@ function WelcomeDidPage() {
 			console.log(e);
 		}
 
+		// try{
+		// 	const acc2 = new Account(DidStorageContract, {
+		// 		address: dexrootAddr,
+		// 		signer: signerNone(),
+		// 		client,
+		// 	});
+		// 	const res2 = await acc2.runLocal("resolveDidDocument", {
+		// 		id: "0x" + pubkey,
+		// 	});
+	
+		// 	console.log(res2);
+	
+		// 	let addrDidDoc = res2.decoded.out_messages[0].value.addrDidDocument;
+	
+		// 	const didAcc = new Account(DidDocumentContract, {
+		// 		address: addrDidDoc,
+		// 		signer: signerNone(),
+		// 		client,
+		// 	});
+	
+		// 	const resDid = await didAcc.runLocal("getDid", {});
+	
+		// 	//setDidDoc(resDid.decoded.out_messages[0].value.value0);
+		// 	console.log(resDid.decoded.out_messages[0].value.value0);
+		// } catch(e) {
+		// 	console.log(e);
+		// }
+
+
+
 		setTimeout(async function(){
 			const acc2 = new Account(DidStorageContract, {
 				address: dexrootAddr,
@@ -159,10 +238,32 @@ function WelcomeDidPage() {
 			const res2 = await acc2.runLocal("resolveDidDocument", {
 				id: "0x" + pubkey,
 			});
+
+
 	
 			console.log(res2);
 	
 			let addrDidDoc = res2.decoded.out_messages[0].value.addrDidDocument;
+
+			try{
+
+				const accDid = new Account(DidDocumentContract, {
+					address: addrDidDoc,
+					signer: signerNone(),
+					client,
+				})
+
+				const resInit = await accDid.run("init", {
+					issuerAddr: localStorage.address
+				}, {
+					signer: signerKeys(await getClientKeys(sessionStorage.seed))
+				})
+
+				console.log(resInit);
+
+			} catch(e) {
+				console.log(e);
+			}
 	
 			const didAcc = new Account(DidDocumentContract, {
 				address: addrDidDoc,
@@ -174,13 +275,16 @@ function WelcomeDidPage() {
 	
 			setDidDoc(resDid.decoded.out_messages[0].value.value0);
 			console.log(resDid.decoded.out_messages[0].value.value0);
-		},5000);
+
+			setLoader(false);
+		},20000);
 
 		
 	}
 
 	async function resolveDID() {
 		let tempDid = DID.split(':')[2];
+		console.log(DID);
 
 		const acc = new Account(DEXClientContract, {
 			address: localStorage.address,
@@ -275,7 +379,7 @@ function WelcomeDidPage() {
 
 		const resDid = await didAcc.runLocal("getDid", {});
 
-		//setDidDoc(resDid.decoded.out_messages[0].value.value0);
+		setDidDoc(resDid.decoded.out_messages[0].value.value0);
 		console.log(resDid.decoded.out_messages[0].value.value0);
 	}
 
@@ -345,11 +449,291 @@ function WelcomeDidPage() {
 
 	}
 
+	async function updateDidStatus() {
+
+		if(curentStatus == undefined) {
+			alert("Set status");
+			return;
+		}
+
+		let bal = getClientBalance(localStorage.address);
+
+		bal.then(
+			(data) => {
+				if(data < 1){
+					alert("Insufficient balance");
+					return;
+				}
+			}
+		);
+
+		setLoader(true);
+
+		const acc = new Account(DEXClientContract, {
+			address: localStorage.address,
+			signer: signerKeys(await getClientKeys(sessionStorage.seed)),
+			client,
+		});
+
+		let pubkey = (await getClientKeys(seed)).public;
+
+		const acc2 = new Account(DidStorageContract, {
+			address: dexrootAddr,
+			signer: signerNone(),
+			client,
+		});
+
+		const res2 = await acc2.runLocal("resolveDidDocument", {
+			id: "0x" + pubkey,
+		});
+
+		console.log(res2);
+
+		let addrDidDoc = res2.decoded.out_messages[0].value.addrDidDocument;
+
+		const didAcc = new Account(DidDocumentContract, {
+			address: addrDidDoc,
+			signer: signerNone(),
+			client,
+		});
+
+		//console.log(JSON.stringify(didDoc.didDocument));
+
+		try {
+
+			const {body} = await client.abi.encode_message_body({
+				abi: {type: "Contract", value: DidDocumentContract.abi},
+				signer: {type: "None"},
+				is_internal: true,
+				call_set: {
+					function_name: "newDidStatus",
+					input: {
+						status: Number(curentStatus),
+					},
+				},
+			});
+
+			const res = await acc.run("sendTransaction", {
+				dest: addrDidDoc,
+				value: 300000000,
+				bounce: true,
+				flags: 3,
+				payload: body,
+			});
+
+			console.log(res);
+		} catch (e) {
+			console.log(e);
+		}
+
+		setTimeout(async function(){
+			const resDid = await didAcc.runLocal("getDid", {});
+
+			setDidDoc(resDid.decoded.out_messages[0].value.value0);
+			console.log(resDid.decoded.out_messages[0].value.value0);
+			setLoader(false);
+		}, 20000);
+
+	}
+
+	async function updateDidPub() {
+
+		if(curentPub == undefined) {
+			alert("Set PubKey");
+			return;
+		}
+		if(curentAddr == undefined) {
+			alert("Set Address");
+			return;
+		}
+
+		console.log(curentPub, curentAddr);
+
+		let bal = getClientBalance(localStorage.address);
+
+		bal.then(
+			(data) => {
+				if(data < 1){
+					alert("Insufficient balance");
+					return;
+				}
+			}
+		);
+
+		//setLoader(true);
+
+		const acc = new Account(DEXClientContract, {
+			address: localStorage.address,
+			signer: signerKeys(await getClientKeys(sessionStorage.seed)),
+			client,
+		});
+
+		let pubkey = (await getClientKeys(seed)).public;
+
+		const acc2 = new Account(DidStorageContract, {
+			address: dexrootAddr,
+			signer: signerNone(),
+			client,
+		});
+
+		const res2 = await acc2.runLocal("resolveDidDocument", {
+			id: "0x" + pubkey,
+		});
+
+		console.log(res2);
+
+		let addrDidDoc = res2.decoded.out_messages[0].value.addrDidDocument;
+
+		const didAcc = new Account(DidDocumentContract, {
+			address: addrDidDoc,
+			signer: signerNone(),
+			client,
+		});
+
+		//console.log(JSON.stringify(didDoc.didDocument));
+
+		try {
+
+			const {body} = await client.abi.encode_message_body({
+				abi: {type: "Contract", value: DidDocumentContract.abi},
+				signer: {type: "None"},
+				is_internal: true,
+				call_set: {
+					function_name: "newDidIssuerPubKey",
+					input: {
+						pubKey: "0x"+curentPub,
+						issuerAddr: curentAddr
+					},
+				},
+			});
+
+			const res = await acc.run("sendTransaction", {
+				dest: addrDidDoc,
+				value: 300000000,
+				bounce: true,
+				flags: 3,
+				payload: body,
+			});
+
+			console.log(res);
+		} catch (e) {
+			console.log(e);
+		}
+
+		setTimeout(async function(){
+			const resDid = await didAcc.runLocal("getDid", {});
+
+			setDidDoc(resDid.decoded.out_messages[0].value.value0);
+			console.log(resDid.decoded.out_messages[0].value.value0);
+			setLoader(false);
+		}, 20000);
+
+	}
+
+	async function deleteDid() {
+
+		let bal = getClientBalance(localStorage.address);
+
+		bal.then(
+			(data) => {
+				if(data < 1){
+					alert("Insufficient balance");
+					return;
+				}
+			}
+		);
+
+		//setLoader(true);
+
+		const acc = new Account(DEXClientContract, {
+			address: localStorage.address,
+			signer: signerKeys(await getClientKeys(sessionStorage.seed)),
+			client,
+		});
+
+		let pubkey = (await getClientKeys(seed)).public;
+
+		const acc2 = new Account(DidStorageContract, {
+			address: dexrootAddr,
+			signer: signerNone(),
+			client,
+		});
+
+		const res2 = await acc2.runLocal("resolveDidDocument", {
+			id: "0x" + pubkey,
+		});
+
+		console.log(res2);
+
+		let addrDidDoc = res2.decoded.out_messages[0].value.addrDidDocument;
+
+		const didAcc = new Account(DidDocumentContract, {
+			address: addrDidDoc,
+			signer: signerNone(),
+			client,
+		});
+
+		//console.log(JSON.stringify(didDoc.didDocument));
+
+		try {
+
+			const {body} = await client.abi.encode_message_body({
+				abi: {type: "Contract", value: DidDocumentContract.abi},
+				signer: {type: "None"},
+				is_internal: true,
+				call_set: {
+					function_name: "deleteDidDocument",
+					input: {},
+				},
+			});
+
+			const res = await acc.run("sendTransaction", {
+				dest: addrDidDoc,
+				value: 300000000,
+				bounce: true,
+				flags: 3,
+				payload: body,
+			});
+
+			console.log(res);
+		} catch (e) {
+			console.log(e);
+		}
+
+		setTimeout(async function(){
+			console.log(1);
+			// const resDid = await didAcc.runLocal("getDid", {});
+
+			// setDidDoc(resDid.decoded.out_messages[0].value.value0);
+			// console.log(resDid.decoded.out_messages[0].value.value0);
+
+			const res3 = await acc2.runLocal("resolveDidDocument", {
+				id: "0x" + pubkey,
+			});
+	
+			console.log(res3);
+
+			try {
+				const resDid = await didAcc.runLocal("getDid", {});
+
+				setDidDoc(resDid.decoded.out_messages[0].value.value0);
+				console.log(resDid.decoded.out_messages[0].value.value0);
+			} catch(e) {
+				alert("Did doc delete");
+			}
+
+			//setLoader(false);
+		}, 20000);
+
+	}
+
 
 	return (
 		<Router>
 			{didDoc ? (
 				<div className="modal-w modal-welcome modal-did-document">
+
+					
 					<div className={loader ? "lds-dual-ring" : "hide"}></div>
 					<div className="text">DID Document</div>
 
@@ -412,21 +796,22 @@ function WelcomeDidPage() {
 						</div>
 						<div className={menuCurent==1?"menu-item":"hide"}>
 							<div>
-								<select name="" id="">
-									<option value="">active</option>
-									<option value="">inactive</option>
+								<select name="" id="" onChange={(ev)=>{setCurentStatus(ev.target.value)}}>
+									<option>1</option>
+									<option>0</option>
 								</select>
 							</div>
-							<button>Save Changes</button>
+							<button onClick={updateDidStatus}>Save Changes</button>
 						</div>
 						<div className={menuCurent==2?"menu-item":"hide"}>
 							<div>
-								<input type="text" placeholder="New PubKey"/>
+								<input type="text" placeholder="New PubKey" onChange={(ev)=>{setCurentPub(ev.target.value)}}/>
+								<input type="text" placeholder="New Address" onChange={(ev)=>{setCurentAddr(ev.target.value)}}/>
 							</div>
-							<button>Save Changes</button>
+							<button onClick={updateDidPub}>Save Changes</button>
 						</div>
 						<div className={menuCurent==3?"menu-item":"hide"}>
-							<button>Delete Document</button>
+							<button onClick={deleteDid}>Delete Document</button>
 						</div>
 						
 					</div>

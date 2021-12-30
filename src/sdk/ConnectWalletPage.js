@@ -326,19 +326,19 @@ function ConnectWalletPage() {
 			setCurentPageLogin(99);
 			setCurentPage(1);
 		}
+		// if (curentPage === 1) {
+		// 	if (check) {
+		// 		setCurentPage(curentPage + 1);
+		// 	} else {
+		// 		setErrorModal([
+		// 			{
+		// 				hidden: true,
+		// 				message: "Accept the user agreement",
+		// 			},
+		// 		]);
+		// 	}
+		// }
 		if (curentPage === 1) {
-			if (check) {
-				setCurentPage(curentPage + 1);
-			} else {
-				setErrorModal([
-					{
-						hidden: true,
-						message: "Accept the user agreement",
-					},
-				]);
-			}
-		}
-		if (curentPage === 2) {
 			if (input1 !== "" && input2 !== "" && input3 !== "" && input4 !== "") {
 				setCurentPage(curentPage + 1);
 			} else {
@@ -350,7 +350,7 @@ function ConnectWalletPage() {
 				]);
 			}
 		}
-		if (curentPage === 3) {
+		if (curentPage === 2) {
 			if (
 				input1 === inputV1 &&
 				input2 === inputV2 &&
@@ -371,7 +371,7 @@ function ConnectWalletPage() {
 				]);
 			}
 		}
-		if (curentPage === 4) {
+		if (curentPage === 3) {
 			setCurentPage(curentPage + 1);
 			console.log(seed);
 			setLoader(true);
@@ -379,7 +379,7 @@ function ConnectWalletPage() {
 			console.log(addr);
 			console.log(loader);
 		}
-		if (curentPage === 5) {
+		if (curentPage === 4) {
 			setCurentPage(curentPage + 1);
 			// let bal = getClientBalance(addr);
 			// setLoader(true);
@@ -405,7 +405,7 @@ function ConnectWalletPage() {
 			// 	},
 			// );
 		}
-		if (curentPage === 6) {
+		if (curentPage === 5) {
 			setCurentPage(99);
 			setCurentPageLogin(1);
 		}
@@ -803,15 +803,12 @@ function ConnectWalletPage() {
 					You have successfully logged into your account
 				</div>
 			</div>
-			<div
+			{/* <div
 				className={
 					curentPage === 1 && errorModal[0].hidden === false ? "page" : "hide"
 				}
 			>
-				{/* <button className="close" onClick={resetPages}>
-					<span></span>
-					<span></span>
-				</button> */}
+				
 				<div className="title">Welcome to DefiSpace!</div>
 				<div className="subtitle">
 					Just read the user`s agreement and set pin for registration
@@ -829,10 +826,10 @@ function ConnectWalletPage() {
 						<a href="https://defispace.com/">Users`s Agreement</a>
 					</div>
 				</div>
-			</div>
+			</div> */}
 			<div
 				className={
-					curentPage === 2 && errorModal[0].hidden === false ? "page" : "hide"
+					curentPage === 1 && errorModal[0].hidden === false ? "page" : "hide"
 				}
 			>
 				<div className="title">Set PIN for quick login</div>
@@ -865,7 +862,7 @@ function ConnectWalletPage() {
 			</div>
 			<div
 				className={
-					curentPage === 3 && errorModal[0].hidden === false ? "page" : "hide"
+					curentPage === 2 && errorModal[0].hidden === false ? "page" : "hide"
 				}
 			>
 				<div className="title">Repeat PIN</div>
@@ -898,7 +895,7 @@ function ConnectWalletPage() {
 			</div>
 			<div
 				className={
-					curentPage === 4 && errorModal[0].hidden === false ? "page" : "hide"
+					curentPage === 3 && errorModal[0].hidden === false ? "page" : "hide"
 				}
 			>
 				<div className="title">Copy your seed phrase</div>
@@ -913,7 +910,7 @@ function ConnectWalletPage() {
 			</div>
 			<div
 				className={
-					curentPage === 5 && errorModal[0].hidden === false ? "page" : "hide"
+					curentPage === 4 && errorModal[0].hidden === false ? "page" : "hide"
 				}
 			>
 				<div className="title">Top up your wallet for activation</div>
@@ -927,7 +924,7 @@ function ConnectWalletPage() {
 			</div>
 			<div
 				className={
-					curentPage === 6 && errorModal[0].hidden === false ? "page" : "hide"
+					curentPage === 5 && errorModal[0].hidden === false ? "page" : "hide"
 				}
 			>
 				<div className="title">Congrats!</div>
@@ -986,13 +983,13 @@ function ConnectWalletPage() {
 				<div className="break"></div>
 				<div className="next">
 					<button
-						className={curentPage === 6 ? "hide" : "connect-btn"}
+						className={curentPage === 5 ? "hide" : "connect-btn"}
 						onClick={PrevPage}
 					>
 						Back
 					</button>
 					<button
-						className={curentPage !== 5 ? "hide" : "connect-btn"}
+						className={curentPage !== 4 ? "hide" : "connect-btn"}
 						onClick={() => {
 							navigator.clipboard.writeText(addr);
 						}}
@@ -1001,7 +998,7 @@ function ConnectWalletPage() {
 					</button>
 
 					<button
-						className={curentPage !== 5 ? "hide" : "connect-btn"}
+						className={curentPage !== 4 ? "hide" : "connect-btn"}
 						onClick={testdep}
 					>
 						Deploy
@@ -1009,7 +1006,7 @@ function ConnectWalletPage() {
 
 					<button
 						className={
-							curentPage === 6 || curentPage === 5 ? "hide" : "connect-btn"
+							curentPage === 5 || curentPage === 4 ? "hide" : "connect-btn"
 						}
 						onClick={NextPage}
 					>
@@ -1033,7 +1030,7 @@ function ConnectWalletPage() {
 					</button> */}
 
 					<button
-						className={curentPage !== 6 ? "hide" : "connect-btn"}
+						className={curentPage !== 5 ? "hide" : "connect-btn"}
 						onClick={NextPage}
 					>
 						Great!
@@ -1045,7 +1042,7 @@ function ConnectWalletPage() {
 				className={
 					errorModal[0].hidden === false &&
 					curentPageLogin > 0 &&
-					curentPage > 6
+					curentPage > 5
 						? "pagination"
 						: "hide"
 				}
