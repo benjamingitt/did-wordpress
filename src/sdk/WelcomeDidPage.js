@@ -161,7 +161,7 @@ function WelcomeDidPage() {
 
 					try {
 						const newDIDDoc = {
-							id: "did:freeton:" +pubkey.toString(),
+							id: "did:everscale:" +pubkey.toString(),
 							//createdAt: new Date().getTime().toString(),
 							"@context": [
 								"https://www.w3.org/ns/did/v1",
@@ -169,9 +169,9 @@ function WelcomeDidPage() {
 							],
 							publicKey: pubkey.toString(),
 							verificationMethod: {
-								id: "did:freeton:" +pubkey.toString(),
+								id: "did:everscale:" +pubkey.toString(),
 								type: "Ed25519VerificationKey2020",
-								controller: "did:freeton:" +pubkey.toString(),
+								controller: "did:everscale:" +pubkey.toString(),
 								publicKeyMultibase: pubkey,
 							},
 						};
