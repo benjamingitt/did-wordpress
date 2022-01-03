@@ -417,6 +417,32 @@ a:hover {
 	padding: 35px 75px;
 	word-wrap: break-word;
 }
+.modal-w > .close {
+	background-color: transparent;
+	border: 0;
+}
+.modal-w > .close > span {
+	display: block;
+	width: 2px;
+	height: 20px;
+	background-color: #000;
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+.modal-w > .close {
+	width: 20px;
+	height: 20px;
+	position: absolute;
+	top: 20px;
+	right: 10px;
+}
+.modal-w > .close > span:nth-child(1) {
+	transform: rotate(45deg);
+}
+.modal-w > .close > span:nth-child(2) {
+	transform: rotate(-45deg);
+}
 .modal-did-document {
 	position: relative;
 	left: 50%;

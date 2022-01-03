@@ -725,9 +725,9 @@ function ConnectWalletPage() {
 						Sign Up
 					</button>
 
-					<button className="connect-btn zeropage-btn" onClick={connectWallet}>
+					{/* <button className="connect-btn zeropage-btn" onClick={connectWallet}>
 						Connect TON Crystal Wallet
-					</button>
+					</button> */}
 				</div>
 			</div>
 			<div
@@ -1001,7 +1001,7 @@ function ConnectWalletPage() {
 						className={curentPage !== 4 ? "hide" : "connect-btn"}
 						onClick={testdep}
 					>
-						Deploy
+						Create wallet
 					</button>
 
 					<button

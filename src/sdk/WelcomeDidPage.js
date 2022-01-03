@@ -78,6 +78,12 @@ function WelcomeDidPage() {
 
 	const [curentAddr, setCurentAddr] = useState();
 
+	const [alertW, setAlertW] = useState({
+		hidden: true,
+		text: "",
+		title: ""
+	});
+
 	async function getClientKeys(phrase) {
 		//todo change with only pubkey returns
 		let test = await client.crypto.mnemonic_derive_sign_keys({
@@ -137,13 +143,176 @@ function WelcomeDidPage() {
 		let bal = getClientBalance(localStorage.address);
 
 		bal.then(
-			(data) => {
+			async (data) => {
 				if(data < 1){
 					alert("Insufficient balance");
 					return;
+				} else {
+
+					setLoader(true);
+
+					const acc = new Account(DEXClientContract, {
+						address: localStorage.address,
+						signer: signerKeys(await getClientKeys(sessionStorage.seed)),
+						client,
+					});
+
+					let pubkey = (await getClientKeys(seed)).public;
+
+					try {
+						const newDIDDoc = {
+							id: "did:freeton:" +pubkey.toString(),
+							//createdAt: new Date().getTime().toString(),
+							"@context": [
+								"https://www.w3.org/ns/did/v1",
+								"https://w3id.org/security/suites/ed25519-2020/v1",
+							],
+							publicKey: pubkey.toString(),
+							verificationMethod: {
+								id: "did:freeton:" +pubkey.toString(),
+								type: "Ed25519VerificationKey2020",
+								controller: "did:freeton:" +pubkey.toString(),
+								publicKeyMultibase: pubkey,
+							},
+						};
+
+						const {body} = await client.abi.encode_message_body({
+							abi: {type: "Contract", value: DidStorageContract.abi},
+							signer: {type: "None"},
+							is_internal: true,
+							call_set: {
+								function_name: "addDid",
+								input: {
+									pubKey: "0x" + pubkey,
+									didDocument: JSON.stringify(newDIDDoc),
+									addr: localStorage.address,
+								},
+							},
+						});
+
+						const res = await acc.run("sendTransaction", {
+							dest: dexrootAddr,
+							value: 500000000,
+							bounce: true,
+							flags: 3,
+							payload: body,
+						});
+
+						console.log(res);
+					} catch (e) {
+						console.log(e);
+					}
+
+					// try{
+					// 	const acc2 = new Account(DidStorageContract, {
+					// 		address: dexrootAddr,
+					// 		signer: signerNone(),
+					// 		client,
+					// 	});
+					// 	const res2 = await acc2.runLocal("resolveDidDocument", {
+					// 		id: "0x" + pubkey,
+					// 	});
+				
+					// 	console.log(res2);
+				
+					// 	let addrDidDoc = res2.decoded.out_messages[0].value.addrDidDocument;
+				
+					// 	const didAcc = new Account(DidDocumentContract, {
+					// 		address: addrDidDoc,
+					// 		signer: signerNone(),
+					// 		client,
+					// 	});
+				
+					// 	const resDid = await didAcc.runLocal("getDid", {});
+				
+					// 	//setDidDoc(resDid.decoded.out_messages[0].value.value0);
+					// 	console.log(resDid.decoded.out_messages[0].value.value0);
+					// } catch(e) {
+					// 	console.log(e);
+					// }
+
+
+
+					setTimeout(async function(){
+						const acc2 = new Account(DidStorageContract, {
+							address: dexrootAddr,
+							signer: signerNone(),
+							client,
+						});
+						const res2 = await acc2.runLocal("resolveDidDocument", {
+							id: "0x" + pubkey,
+						});
+
+
+				
+						console.log(res2);
+				
+						let addrDidDoc = res2.decoded.out_messages[0].value.addrDidDocument;
+
+						try{
+
+							const accDid = new Account(DidDocumentContract, {
+								address: addrDidDoc,
+								signer: signerNone(),
+								client,
+							})
+
+							const resInit = await accDid.run("init", {
+								issuerAddr: localStorage.address
+							}, {
+								signer: signerKeys(await getClientKeys(sessionStorage.seed))
+							})
+
+							console.log(resInit);
+
+						} catch(e) {
+							console.log(e);
+							setLoader(false);
+							alert("Error!")
+							return;
+						}
+				
+						const didAcc = new Account(DidDocumentContract, {
+							address: addrDidDoc,
+							signer: signerNone(),
+							client,
+						});
+				
+						const resDid = await didAcc.runLocal("getDid", {});
+				
+						//setDidDoc(resDid.decoded.out_messages[0].value.value0);
+						console.log(resDid.decoded.out_messages[0].value.value0);
+
+						let tempDoc = JSON.parse(resDid.decoded.out_messages[0].value.value0.didDocument);
+
+						let tempDid = tempDoc.id;
+
+						console.log(tempDoc);
+
+						console.log(tempDid);
+
+						setLoader(false);
+						setAlertW({
+							hidden: false,
+							text: "Your DID has been created: " + tempDid,
+							title: "Congratulations"
+						})
+					},20000);
+
 				}
 			}
 		);
+
+		
+
+		
+	}
+
+	async function resolveDID() {
+
+		let tempDid = DID.split(':')[2];
+		console.log(DID);
+		
 
 		setLoader(true);
 
@@ -155,116 +324,29 @@ function WelcomeDidPage() {
 
 		let pubkey = (await getClientKeys(seed)).public;
 
-		try {
-			const newDIDDoc = {
-				id: "did:freeton:" +pubkey.toString(),
-				//createdAt: new Date().getTime().toString(),
-				"@context": [
-					"https://www.w3.org/ns/did/v1",
-					"https://w3id.org/security/suites/ed25519-2020/v1",
-				],
-				publicKey: pubkey.toString(),
-				verificationMethod: {
-					id: "did:freeton:" +pubkey.toString(),
-					type: "Ed25519VerificationKey2020",
-					controller: "did:freeton:" +pubkey.toString(),
-					publicKeyMultibase: pubkey,
-				},
-			};
+		const acc2 = new Account(DidStorageContract, {
+			address: dexrootAddr,
+			signer: signerNone(),
+			client,
+		});
 
-			const {body} = await client.abi.encode_message_body({
-				abi: {type: "Contract", value: DidStorageContract.abi},
-				signer: {type: "None"},
-				is_internal: true,
-				call_set: {
-					function_name: "addDid",
-					input: {
-						pubKey: "0x" + pubkey,
-						didDocument: JSON.stringify(newDIDDoc),
-						addr: localStorage.address,
-					},
-				},
+		let res2;
+
+		try{
+			res2 = await acc2.runLocal("resolveDidDocument", {
+				id: "0x" + tempDid,
 			});
-
-			const res = await acc.run("sendTransaction", {
-				dest: dexrootAddr,
-				value: 500000000,
-				bounce: true,
-				flags: 3,
-				payload: body,
-			});
-
-			console.log(res);
-		} catch (e) {
-			console.log(e);
+		} catch {
+			setLoader(false);
+			alert("Incorrect format DID");
+			return;
 		}
 
-		// try{
-		// 	const acc2 = new Account(DidStorageContract, {
-		// 		address: dexrootAddr,
-		// 		signer: signerNone(),
-		// 		client,
-		// 	});
-		// 	const res2 = await acc2.runLocal("resolveDidDocument", {
-		// 		id: "0x" + pubkey,
-		// 	});
-	
-		// 	console.log(res2);
-	
-		// 	let addrDidDoc = res2.decoded.out_messages[0].value.addrDidDocument;
-	
-		// 	const didAcc = new Account(DidDocumentContract, {
-		// 		address: addrDidDoc,
-		// 		signer: signerNone(),
-		// 		client,
-		// 	});
-	
-		// 	const resDid = await didAcc.runLocal("getDid", {});
-	
-		// 	//setDidDoc(resDid.decoded.out_messages[0].value.value0);
-		// 	console.log(resDid.decoded.out_messages[0].value.value0);
-		// } catch(e) {
-		// 	console.log(e);
-		// }
+		console.log(res2);
 
+		let addrDidDoc = res2.decoded.out_messages[0].value.addrDidDocument;
 
-
-		setTimeout(async function(){
-			const acc2 = new Account(DidStorageContract, {
-				address: dexrootAddr,
-				signer: signerNone(),
-				client,
-			});
-			const res2 = await acc2.runLocal("resolveDidDocument", {
-				id: "0x" + pubkey,
-			});
-
-
-	
-			console.log(res2);
-	
-			let addrDidDoc = res2.decoded.out_messages[0].value.addrDidDocument;
-
-			try{
-
-				const accDid = new Account(DidDocumentContract, {
-					address: addrDidDoc,
-					signer: signerNone(),
-					client,
-				})
-
-				const resInit = await accDid.run("init", {
-					issuerAddr: localStorage.address
-				}, {
-					signer: signerKeys(await getClientKeys(sessionStorage.seed))
-				})
-
-				console.log(resInit);
-
-			} catch(e) {
-				console.log(e);
-			}
-	
+		try{
 			const didAcc = new Account(DidDocumentContract, {
 				address: addrDidDoc,
 				signer: signerNone(),
@@ -272,19 +354,24 @@ function WelcomeDidPage() {
 			});
 	
 			const resDid = await didAcc.runLocal("getDid", {});
-	
-			setDidDoc(resDid.decoded.out_messages[0].value.value0);
-			console.log(resDid.decoded.out_messages[0].value.value0);
 
 			setLoader(false);
-		},20000);
+			setDidDoc(resDid.decoded.out_messages[0].value.value0);
+			console.log(resDid.decoded.out_messages[0].value.value0);
+		} catch(e) {
+			console.log(e);
+			setLoader(false);
+			alert("Error! \n Possible reasons: \n - Wrong DID \n - This DID has been deleted");
+		}
 
 		
 	}
 
-	async function resolveDID() {
+	async function updateDIDDocument() {
 		let tempDid = DID.split(':')[2];
 		console.log(DID);
+
+		setLoader(true);
 
 		const acc = new Account(DEXClientContract, {
 			address: localStorage.address,
@@ -302,41 +389,6 @@ function WelcomeDidPage() {
 
 		const res2 = await acc2.runLocal("resolveDidDocument", {
 			id: "0x" + tempDid,
-		});
-
-		console.log(res2);
-
-		let addrDidDoc = res2.decoded.out_messages[0].value.addrDidDocument;
-
-		const didAcc = new Account(DidDocumentContract, {
-			address: addrDidDoc,
-			signer: signerNone(),
-			client,
-		});
-
-		const resDid = await didAcc.runLocal("getDid", {});
-
-		setDidDoc(resDid.decoded.out_messages[0].value.value0);
-		console.log(resDid.decoded.out_messages[0].value.value0);
-	}
-
-	async function updateDIDDocument() {
-		const acc = new Account(DEXClientContract, {
-			address: localStorage.address,
-			signer: signerKeys(await getClientKeys(sessionStorage.seed)),
-			client,
-		});
-
-		let pubkey = (await getClientKeys(seed)).public;
-
-		const acc2 = new Account(DidStorageContract, {
-			address: dexrootAddr,
-			signer: signerNone(),
-			client,
-		});
-
-		const res2 = await acc2.runLocal("resolveDidDocument", {
-			id: "0x" + pubkey,
 		});
 
 		console.log(res2);
@@ -377,10 +429,20 @@ function WelcomeDidPage() {
 			console.log(e);
 		}
 
-		const resDid = await didAcc.runLocal("getDid", {});
+		setTimeout(async function(){
+			try{
+				const resDid = await didAcc.runLocal("getDid", {});
 
-		setDidDoc(resDid.decoded.out_messages[0].value.value0);
-		console.log(resDid.decoded.out_messages[0].value.value0);
+				setDidDoc(resDid.decoded.out_messages[0].value.value0);
+				console.log(resDid.decoded.out_messages[0].value.value0);
+				setLoader(false);
+			} catch(e) {
+				console.log(e);
+				alert("Error!");
+				setLoader(false);
+				
+			}
+		},20000)
 	}
 
 	function addAttribute() {
@@ -456,6 +518,9 @@ function WelcomeDidPage() {
 			return;
 		}
 
+		let tempDid = DID.split(':')[2];
+		console.log(DID);
+
 		let bal = getClientBalance(localStorage.address);
 
 		bal.then(
@@ -484,7 +549,7 @@ function WelcomeDidPage() {
 		});
 
 		const res2 = await acc2.runLocal("resolveDidDocument", {
-			id: "0x" + pubkey,
+			id: "0x" + tempDid,
 		});
 
 		console.log(res2);
@@ -547,6 +612,9 @@ function WelcomeDidPage() {
 			return;
 		}
 
+		let tempDid = DID.split(':')[2];
+		console.log(DID);
+
 		console.log(curentPub, curentAddr);
 
 		let bal = getClientBalance(localStorage.address);
@@ -560,7 +628,7 @@ function WelcomeDidPage() {
 			}
 		);
 
-		//setLoader(true);
+		setLoader(true);
 
 		const acc = new Account(DEXClientContract, {
 			address: localStorage.address,
@@ -577,7 +645,7 @@ function WelcomeDidPage() {
 		});
 
 		const res2 = await acc2.runLocal("resolveDidDocument", {
-			id: "0x" + pubkey,
+			id: "0x" + tempDid,
 		});
 
 		console.log(res2);
@@ -618,19 +686,30 @@ function WelcomeDidPage() {
 			console.log(res);
 		} catch (e) {
 			console.log(e);
+			setLoader(false);
+			return;
 		}
 
 		setTimeout(async function(){
-			const resDid = await didAcc.runLocal("getDid", {});
+			try{
+				const resDid = await didAcc.runLocal("getDid", {});
 
-			setDidDoc(resDid.decoded.out_messages[0].value.value0);
-			console.log(resDid.decoded.out_messages[0].value.value0);
-			setLoader(false);
+				setDidDoc(resDid.decoded.out_messages[0].value.value0);
+				console.log(resDid.decoded.out_messages[0].value.value0);
+				setLoader(false);
+			} catch(e) {
+				console.log(e);
+				alert("Error!");
+				setLoader(false);
+			}
 		}, 20000);
 
 	}
 
 	async function deleteDid() {
+
+		let tempDid = DID.split(':')[2];
+		console.log(DID);
 
 		let bal = getClientBalance(localStorage.address);
 
@@ -643,7 +722,7 @@ function WelcomeDidPage() {
 			}
 		);
 
-		//setLoader(true);
+		setLoader(true);
 
 		const acc = new Account(DEXClientContract, {
 			address: localStorage.address,
@@ -660,7 +739,7 @@ function WelcomeDidPage() {
 		});
 
 		const res2 = await acc2.runLocal("resolveDidDocument", {
-			id: "0x" + pubkey,
+			id: "0x" + tempDid,
 		});
 
 		console.log(res2);
@@ -698,6 +777,8 @@ function WelcomeDidPage() {
 			console.log(res);
 		} catch (e) {
 			console.log(e);
+			setLoader(false);
+			return;
 		}
 
 		setTimeout(async function(){
@@ -708,7 +789,7 @@ function WelcomeDidPage() {
 			// console.log(resDid.decoded.out_messages[0].value.value0);
 
 			const res3 = await acc2.runLocal("resolveDidDocument", {
-				id: "0x" + pubkey,
+				id: "0x" + tempDid,
 			});
 	
 			console.log(res3);
@@ -719,19 +800,44 @@ function WelcomeDidPage() {
 				setDidDoc(resDid.decoded.out_messages[0].value.value0);
 				console.log(resDid.decoded.out_messages[0].value.value0);
 			} catch(e) {
+				backToLogin();
+				setLoader(false);
 				alert("Did doc delete");
 			}
 
-			//setLoader(false);
+			setLoader(false);
 		}, 20000);
+
+	}
+
+	function backToLogin() {
+
+		setDidDoc("");
+		setDID("");
 
 	}
 
 
 	return (
 		<Router>
+
+			<div className={alertW.hidden?"hide":"modal-w modal-welcome"}>
+
+				<button className="close" onClick={()=>setAlertW({hidden: true, text:"", title:""})}>
+					<span></span>
+					<span></span>
+				</button>
+
+				<div class="text">{alertW.title}</div>
+
+				<span class="content">
+					{alertW.text}
+				</span>
+
+			</div>
+
 			{didDoc ? (
-				<div className="modal-w modal-welcome modal-did-document">
+				<div className={alertW.hidden?"modal-w modal-welcome modal-did-document":"hide"}>
 
 					
 					<div className={loader ? "lds-dual-ring" : "hide"}></div>
@@ -761,10 +867,10 @@ function WelcomeDidPage() {
 					</div>
 
 					<div className="menu-document">
-						<span className={menuCurent==0?"active":""} onClick={()=>setMenuCurent(0)}>New Document</span>
-						<span className={menuCurent==1?"active":""} onClick={()=>setMenuCurent(1)}>Change Status</span>
-						<span className={menuCurent==2?"active":""} onClick={()=>setMenuCurent(2)}>New IssuerPubKey</span>
-						<span className={menuCurent==3?"active":""} onClick={()=>setMenuCurent(3)}>Delete Document</span>
+						<span className={menuCurent==0?"active":""} onClick={()=>setMenuCurent(0)}>Change document</span>
+						<span className={menuCurent==1?"active":""} onClick={()=>setMenuCurent(1)}>Change status</span>
+						<span className={menuCurent==2?"active":""} onClick={()=>setMenuCurent(2)}>Change owner</span>
+						<span className={menuCurent==3?"active":""} onClick={()=>setMenuCurent(3)}>Delete document</span>
 						
 					</div>
 					<div class="content-document">
@@ -821,9 +927,10 @@ function WelcomeDidPage() {
 					<div className="note">
 						Note: Transactions can take 5 to 15 seconds
 					</div>
+					<button onClick={backToLogin}>Back</button>
 				</div>
 			) : (
-				<div className="modal-w modal-welcome">
+				<div className={alertW.hidden?"modal-w modal-welcome":"hide"}>
 					<div className={loader ? "lds-dual-ring" : "hide"}></div>
 					<div className="text">Welcome!</div>
 
