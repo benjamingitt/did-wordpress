@@ -15,6 +15,14 @@ import {DidDocumentContract} from "./contracts/new/DidDocumentContractNew.js";
 
 import {useQuery} from "react-query";
 
+import * as ed from 'noble-ed25519';
+
+import sha256 from 'crypto-js/sha256';
+
+
+
+
+
 //const {TonClient} = require("@tonclient/core");
 TonClient.useBinaryLibrary(libWeb);
 const client = new TonClient({network: {endpoints: ["net.ton.dev"]}});
@@ -54,6 +62,8 @@ let walletAddr =
 // 				'")}',
 // 		}),
 // 	}).then((response) => response.json());
+
+
 
 function WelcomeDidPage() {
 	const [didDoc, setDidDoc] = useState();
@@ -321,8 +331,6 @@ function WelcomeDidPage() {
 			signer: signerKeys(await getClientKeys(sessionStorage.seed)),
 			client,
 		});
-
-		let pubkey = (await getClientKeys(seed)).public;
 
 		const acc2 = new Account(DidStorageContract, {
 			address: dexrootAddr,
@@ -817,6 +825,118 @@ function WelcomeDidPage() {
 
 	}
 
+	function testreq() {
+
+		// let data = '{"user":{"did": "did:everscale:f28b5fb95c2bfdc70b939de1ce2d79e1b8d233223596490827a91bc600fd876d"}}';
+
+		// var xhr = new XMLHttpRequest();
+		// xhr.open("POST", "http://ssi.defispace.com/auth", true);
+		// xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+
+		// xhr.send(data);
+
+		// xhr.onreadystatechange = function() 
+		// {
+		// if (xhr.readyState == 4)
+		// {
+		// 	if(xhr.status == 200) 
+		// 	{
+		// 		console.log(xhr.responseText);
+		// 	}
+		// }
+		// }
+
+		// const request = fetch("https://ssi.defispace.com/auth", {
+		// 		method: "POST",
+		// 		// headers: {"Content-Type": "application/json; charset=utf-8"},
+		// 		body: {
+		// 			body:
+		// 				JSON.parse('{"user":{"did": "did:everscale:f28b5fb95c2bfdc70b939de1ce2d79e1b8d233223596490827a91bc600fd876d"}}'),
+		// 		},
+		// }).then((response) => console.log(response));
+
+		function sendSign(data) {
+			fetch("https://ssi.defispace.com/auth/login", {
+				method: "post",
+				headers: {
+					'Content-Type': 'application/json; charset=utf-8',
+					'Connection' : 'keep-alive'
+				},
+	
+				body: `{
+					"user":
+					{
+						"signatureHex":"${data}",
+						"did": "f28b5fb95c2bfdc70b939de1ce2d79e1b8d233223596490827a91bc600fd876d"
+				}
+				}`
+				}).then((data)=>{
+					return data.json();
+
+				}).then((data)=>{
+					testSign(data.token);
+				})
+		}
+
+		function testSign(data) {
+			fetch("https://ssi.defispace.com/auth/user", {
+				method: "get",
+				headers: {
+					'Content-Type': 'application/json; charset=utf-8',
+					'Connection' : 'keep-alive',
+					'Authorization': `Token ${data}`
+				},
+	
+				
+				}).then((data)=>{
+					return data.json();
+
+				}).then((data)=>{
+					console.log(data);
+				})
+		}
+
+		fetch("https://ssi.defispace.com/auth", {
+			method: "post",
+			headers: {
+				'Content-Type': 'application/json; charset=utf-8',
+				'Connection' : 'keep-alive'
+			},
+
+			body: '{"user":{"did": "f28b5fb95c2bfdc70b939de1ce2d79e1b8d233223596490827a91bc600fd876d"}}'
+			})
+			.then( (response) => { 
+				return response.json();
+				}).then(async function(data) {
+					// data is the parsed version of the JSON returned from the above endpoint.
+					let msg = data.value;
+					//const msgHash = crypto.createHash('sha256').update(msg).digest('hex');
+					const msgHash = sha256(msg).toString();
+					console.log(msgHash);
+
+					let privatemsg = (await getClientKeys(seed)).secret;
+
+					console.log(privatemsg);
+
+					return await ed.sign(msgHash, privatemsg);
+					
+				}).then((data)=>{
+					sendSign(data);
+				});
+
+	}
+
+	// async function signMessage(input) {
+
+    //     const msg = input.message
+    //     const msgHash = crypto.createHash('sha256').update(msg).digest('hex');
+    //     console.log(msgHash)
+
+		
+
+    //     return await ed.sign(msgHash, input.privateKey);
+    // }
+
 
 	return (
 		<Router>
@@ -963,6 +1083,8 @@ function WelcomeDidPage() {
 					>
 						Log in with DID
 					</button>
+
+					<button onClick={testreq}>test</button>
 				</div>
 			)}
 		</Router>

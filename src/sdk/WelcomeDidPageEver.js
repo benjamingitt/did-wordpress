@@ -114,10 +114,6 @@ function WelcomeDidPageEver() {
             throw new Error('Extension is not installed');
         }
        
-
-        
-
-
         await ton.ensureInitialized();
 
         const {accountInteraction} = await ton.rawApi.requestPermissions({
@@ -133,7 +129,7 @@ function WelcomeDidPageEver() {
 
 		try {
 			const newDIDDoc = {
-				id: "did:freeton:" +accountInteraction.publicKey.toString(),
+				id: "did:everscale:" +accountInteraction.publicKey.toString(),
 				createdAt: new Date().getTime().toString(),
 				"@context": [
 					"https://www.w3.org/ns/did/v1",
@@ -148,25 +144,23 @@ function WelcomeDidPageEver() {
 				},
 			};
 
-			
-
-            // const response = await ton.rawApi.sendMessage({
-            //     sender: accountInteraction.address,
-            //     recipient: dexrootAddr,
-            //     amount: '500000000',
-            //     bounce: true,
-            //     payload: {
-            //         abi: JSON.stringify(DidStorageContract.abi),
-            //         method: 'addDid',
-            //         params: {
-            //             pubKey: "0x"+accountInteraction.publicKey,
-            //             didDocument: JSON.stringify(newDIDDoc),
-            //             addr: accountInteraction.address
-            //         }
-            //     }
-            // });
-            // console.log('response');
-            // console.log(response);
+            const response = await ton.rawApi.sendMessage({
+                sender: accountInteraction.address,
+                recipient: dexrootAddr,
+                amount: '500000000',
+                bounce: true,
+                payload: {
+                    abi: JSON.stringify(DidStorageContract.abi),
+                    method: 'addDid',
+                    params: {
+                        pubKey: "0x"+accountInteraction.publicKey,
+                        didDocument: JSON.stringify(newDIDDoc),
+                        addr: accountInteraction.address
+                    }
+                }
+            });
+            console.log('response');
+            console.log(response);
 
 			
 		} catch (e) {
@@ -186,19 +180,18 @@ function WelcomeDidPageEver() {
             });
             console.log('output');
             const addrDidDoc = output.addrDidDocument;
-			//const addrDidDoc = "0:2689429e8d2b696a00612ace0b2e5d53b004b0c480f60948d1dfa241f02b3235";
             console.log(output, addrDidDoc);
 
-            const {second} = await ton.rawApi.runLocal({
+            const outputs = await ton.rawApi.runLocal({
                 address: addrDidDoc,
                 functionCall: {
                     abi: JSON.stringify(DidDocumentContract.abi),
-                    method: 'getInfo',
+                    method: 'getDid',
                     params: {}
                 }
             });
 
-            console.log(second);
+            console.log(outputs);
     
     
             // const acc2 = new Account(DidStorageContract, {
