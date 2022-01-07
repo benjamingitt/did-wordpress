@@ -887,6 +887,7 @@ function WelcomeDidPage() {
 			})
 			.then((data) => {
 				sendSign(data);
+				console.log(data);
 			});
 	}
 
