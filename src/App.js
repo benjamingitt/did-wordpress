@@ -37,6 +37,7 @@ import LoginDidPage from "./sdk/LoginDidPage";
 import LoginPage from "./sdk/LoginPage";
 import AppPage from "./sdk/AppPage";
 import WelcomeDidPageEver from "./sdk/WelcomeDidPageEver";
+import LoginWPPage from "./sdk/LoginWPPage";
 
 import Header from "./sdk/Header";
 
@@ -170,8 +171,13 @@ function App() {
 						<Route exact path="/welcome-did" component={WelcomeDidPage}></Route>
 						<Route exact path="/login-did" component={LoginDidPage}></Route>
 						<Route exact path="/login" component={LoginPage}></Route>
+						<Route exact path="/login-wp" component={LoginWPPage}></Route>
 						<Route exact path="/app" component={AppPage}></Route>
-						<Route exact path="/welcome-did-ever" component={WelcomeDidPageEver}></Route>
+						<Route
+							exact
+							path="/welcome-did-ever"
+							component={WelcomeDidPageEver}
+						></Route>
 					</Switch>
 				</div>
 			</Context.Provider>

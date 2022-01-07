@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {HashRouter as Router, Link} from "react-router-dom";
+import {HashRouter as Router, Link, Redirect} from "react-router-dom";
 import {ProviderRpcClient, RawProviderApiResponse} from "ton-inpage-provider";
 
 import {Account} from "@tonclient/appkit";
@@ -100,6 +100,8 @@ function WelcomeDidPage() {
 		text: "",
 		title: "",
 	});
+
+	const [redirect, setRedirect] = useState(false);
 
 	async function getClientKeys(phrase) {
 		//todo change with only pubkey returns
@@ -838,9 +840,24 @@ function WelcomeDidPage() {
 				.then((data) => {
 					return data.json();
 				})
-				.then((data) => {
-					console.log(data);
-				});
+				.then(
+					(data) => {
+						console.log(data);
+						if (data.token == undefined) {
+							alert("Error Log In");
+							return;
+						} else {
+							localStorage.setItem(
+								"loginData",
+								JSON.stringify({token: data.token, did: tempDid}),
+							);
+							setRedirect(true);
+						}
+					},
+					(error) => {
+						console.log(error);
+					},
+				);
 		}
 
 		fetch("https://ssi.defispace.com/auth", {
@@ -913,6 +930,8 @@ function WelcomeDidPage() {
 				<button type="button" className="btn btn-secondary" onClick={testreq}>
 					Log in with DID
 				</button>
+
+				{redirect ? <Redirect to="/login-wp" /> : null}
 			</div>
 		</Router>
 	);
