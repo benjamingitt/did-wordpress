@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {HashRouter as Router, Link} from "react-router-dom";
+import {HashRouter as Router, Link, Redirect} from "react-router-dom";
 import {ProviderRpcClient, RawProviderApiResponse} from "ton-inpage-provider";
 
 import {Account} from "@tonclient/appkit";
@@ -92,6 +92,8 @@ function WelcomeDidPageEver() {
 	];
 
 	const [curentAttr, setCurentAttr] = useState();
+
+	const [redirect, setRedirect] = useState(false);
 
 	async function getClientKeys(phrase) {
 		//todo change with only pubkey returns
@@ -505,7 +507,7 @@ function WelcomeDidPageEver() {
 								JSON.stringify({token: data.token, did: tempDid}),
 							);
 							console.log(data.token);
-							//setRedirect(true);
+							setRedirect(true);
 						}
 					},
 					(error) => {
@@ -529,8 +531,11 @@ function WelcomeDidPageEver() {
 			.then(async function (data) {
 				// data is the parsed version of the JSON returned from the above endpoint.
 				let msg = data.value;
+				console.log(msg);
 				//const msgHash = crypto.createHash('sha256').update(msg).digest('hex');
-				const msgHash = sha256(msg).toString();
+				//const msgHash = sha256(msg).toString(16);
+
+				const msgHash = window.btoa(msg);
 				console.log(msgHash);
 
 				//let privatemsg = (await getClientKeys(seed)).secret;
@@ -542,7 +547,7 @@ function WelcomeDidPageEver() {
 
 				console.log(signData);
 
-				return signData.signature;
+				return signData.signatureHex;
 			})
 			.then((data) => {
 				sendSign(data);
@@ -581,6 +586,7 @@ function WelcomeDidPageEver() {
 				<button type="button" className="btn btn-secondary" onClick={testreq}>
 					Log in with DID
 				</button>
+				{redirect ? <Redirect to="/login-wp" /> : null}
 			</div>
 			)
 		</Router>
