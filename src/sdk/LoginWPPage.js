@@ -27,7 +27,7 @@ const pidCrypt = require("pidcrypt");
 require("pidcrypt/aes_cbc");
 
 function LoginWPPage() {
-	const [data] = useState(localStorage.loginData);
+	const [data] = useState(JSON.parse(localStorage.loginData));
 
 	return (
 		<Router>
@@ -36,10 +36,18 @@ function LoginWPPage() {
 				<div className="text">Welcome!</div>
 
 				{/* <div class="text">I already have a DID</div> */}
-				<input type="text" placeholder="DID" value={data} className="hide" />
+				{/* <input type="text" placeholder="DID" value={data} className="hide" />
 				<button type="button" className="btn btn-secondary">
 					Log in
-				</button>
+				</button> */}
+
+				<form action="action.php" method="post">
+					<input value={data.token} id="token" name="token" className="hide" />
+					<input value={data.did} id="did" name="did" className="hide" />
+					<p>
+						<input type="submit" value="Log In" className="btn btn-secondary" />
+					</p>
+				</form>
 			</div>
 		</Router>
 	);
