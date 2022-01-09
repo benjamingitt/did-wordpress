@@ -41,7 +41,7 @@ function LoginWPPage() {
 					Log in
 				</button> */}
 
-				<form action="action.php" method="post">
+				<form method="post">
 					<input value={data.token} id="token" name="token" className="hide" />
 					<input value={data.did} id="did" name="did" className="hide" />
 					<p>
