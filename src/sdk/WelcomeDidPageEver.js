@@ -479,7 +479,7 @@ function WelcomeDidPageEver() {
 					return data.json();
 				})
 				.then((data) => {
-					testSign(data.token);
+					testSign(data.user.token);
 				});
 		}
 
@@ -498,13 +498,13 @@ function WelcomeDidPageEver() {
 				.then(
 					(data) => {
 						console.log(data);
-						if (data.token == undefined) {
+						if (data.user.token == undefined) {
 							alert("Error Log In");
 							return;
 						} else {
 							localStorage.setItem(
 								"loginData",
-								JSON.stringify({token: data.token, did: tempDid}),
+								JSON.stringify({token: data.user.token, did: tempDid}),
 							);
 							console.log(data.token);
 							setRedirect(true);

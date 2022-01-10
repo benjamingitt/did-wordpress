@@ -824,7 +824,8 @@ function WelcomeDidPage() {
 					return data.json();
 				})
 				.then((data) => {
-					testSign(data.token);
+					console.log(data.user.token);
+					testSign(data.user.token);
 				});
 		}
 
@@ -842,14 +843,14 @@ function WelcomeDidPage() {
 				})
 				.then(
 					(data) => {
-						console.log(data);
-						if (data.token == undefined) {
+						console.log(data.user.token);
+						if (data.user.token == undefined) {
 							alert("Error Log In");
 							return;
 						} else {
 							localStorage.setItem(
 								"loginData",
-								JSON.stringify({token: data.token, did: tempDid}),
+								JSON.stringify({token: data.user.token, did: tempDid}),
 							);
 							setRedirect(true);
 						}
